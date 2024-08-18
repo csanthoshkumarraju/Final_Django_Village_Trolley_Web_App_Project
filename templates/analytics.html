@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% load static %}
+{% block css %}
+    <!-- Link to home-specific CSS -->
+    <link rel="stylesheet" href="{% static 'analytics.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+{% endblock css%}
+
+{% block content %}
+<script>
+  function redirectToProducts(shopOwnerId) {
+      var url = "{% url 'daily_monthly_sold_products' 0 %}".replace('0', shopOwnerId);
+      window.location.href = url;
+  }
+</script>
+
+<div class="gradient-background">
+  <h1 class="data_header"> {{ shop_owner_first_name }} {{ shop_owner_last_name }} : {{ shop_owner_shop_name }} Shop Analytics</h1>
+</div>
+<section class="analitycs_section">
+  
+    <div class="analitics-box"> 
+      
+      <div>
+        <h5><u>Daily</u></h5>
+        <button class="DSPbu" onclick="redirectToProducts({{ shop_owner_id }})">Daily selling products</button>
+        <p id="current-date"></p>
+        <p id="current-time"></p>
+        <p>Sold Today : ₹ {{ total_sold_today|floatformat:2 }} </p>
+        <p>Products sold: {{ total_quantity_today|floatformat:2 }}</p>
+        <p>Profit/Loss : ₹ {{ profit_or_loss_today|floatformat:2 }}</p>
+      </div>
+      <div>
+        <h5><u>Monthly</u></h5>
+        <button class="MSPbu" onclick="redirectToProducts({{ shop_owner_id }})">Monthly selling products</button>
+        <p id="current-month"></p>
+        <p>Sold This month : {{ total_sold_month|floatformat:2 }} </p>
+        <p>Products sold: {{ total_quantity_month|floatformat:2 }}</p>
+        <p>Profit/Loss : ₹ {{ profit_or_loss_month|floatformat:2 }}</p>
+      </div>
+      <div>
+        <h5><u>Yearly</u></h5>
+        
+        <p id="current-year"></p>
+        <p>Sold This Year : ₹ {{ total_sold_year|floatformat:2 }}</p>
+        <p>Products sold: {{ total_quantity_year|floatformat:2 }}</p>
+        <p>Profit/Loss : ₹ {{ profit_or_loss_year|floatformat:2 }}</p>
+      </div>
+      <div>
+          <h5><u>Total Profit</u></h5>
+          <p>Investment: ₹ {{ total_investment|floatformat:2 }}0</p>
+          <p>Return : ₹ {{ total_return|floatformat:2 }}</p>
+          <p>Profit : ₹ {{ total_profit|floatformat:2 }}</p>
+      </div>
+      <div>
+        <h5><u>Total Loss</u></h5>
+          <p>Investment: ₹ {{ total_investment|floatformat:2 }}</p>
+          <p>Return : ₹ {{ total_return|floatformat:2 }}</p>
+          <p>Loss : ₹ {{ total_loss|floatformat:2 }}</p>
+      </div>
+      <div>
+        <h5> <u>Most & Least selling products</u></h5>
+        
+        <p>Most :- </p>
+        <p>{{ most_selling_products }}</p>
+        <p>Least :-<p>
+        </p>{{ least_selling_products }}</p>
+        </div>
+    </div>
+  </section>
+
+
+  <script>
+    function updateTime() {
+      // Create a new Date object for current time
+      var currentTime = new Date();
+  
+      // Calculate IST offset in minutes (UTC +5:30)
+      var ISTOffset = 330;
+  
+      // Calculate IST time using the provided method
+      var ISTTime = new Date(currentTime.getTime() + (ISTOffset + currentTime.getTimezoneOffset()) * 60000);
+  
+      // Extract components of IST time
+      var hours = ISTTime.getHours();
+      var minutes = ISTTime.getMinutes();
+      var ampm = hours >= 12 ? 'PM' : 'AM';
+  
+      // Convert hours from 24-hour to 12-hour format
+      hours = hours % 12;
+      hours = hours ? hours : 12; // the hour '0' should be '12'
+  
+      // Ensure minutes are two digits
+      minutes = (minutes < 10 ? '0' : '') + minutes;
+  
+      // Build the time string in 12-hour format with AM/PM
+      var timeString = hours + ':' + minutes + ' ' + ampm;
+  
+      // Build the date string in DD/MM/YYYY format
+      var dateString = ISTTime.toLocaleDateString('en-IN');
+  
+      // Update the HTML elements
+      document.getElementById('current-time').textContent = 'Time : ' + timeString;
+      document.getElementById('current-date').textContent = 'Date : ' + dateString;
+  }
+  
+  // Call updateTime function initially to avoid delay
+  updateTime();
+  
+// Update time every minute (60000 milliseconds)
+setInterval(function() { updateTime(); }, 60000);
+
+    </script>
+    
+    <script>
+    function updateMonthAndYear() {
+        // Create a new Date object for current time
+        var currentTime = new Date();
+    
+        // Extract current month and year
+        var month = currentTime.toLocaleString('en-US', { month: 'long' });
+        var year = currentTime.getFullYear();
+    
+        // Display month and year in the HTML elements
+        document.getElementById('current-month').textContent = ' Month: ' + month.toUpperCase();
+        document.getElementById('current-year').textContent = ' Year: ' + year;
+    }
+    
+    // Call updateMonthAndYear function initially to set the initial display
+    updateMonthAndYear();
+    
+    // This script does not update every second since month and year don't change frequently
+    // If you need it to update periodically, use a setInterval similar to the previous examples
+    
+    </script>
+
+  {% endblock %}

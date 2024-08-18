@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% load static %}
+{% block css %}
+    <!-- Link to home-specific CSS -->
+    <link rel="stylesheet" href="{% static 'billingform.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+{% endblock css%}
+
+{% block content %}
+ 
+<section class="billing_section">
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const quantityInputs = document.querySelectorAll('input[name="quantities"]');
+            const totalBillAmountDisplay = document.getElementById('totalBillAmount');
+        
+            function updateDisplays(input) {
+                const productId = input.id.split('_')[1];
+                const quantityDisplay = document.getElementById(`quantity_display_${productId}`);
+                const quantityDisplayBuying = document.getElementById(`quantity_display_buying_${productId}`);
+                const totalAmountDisplay = document.getElementById(`total_amount_display_${productId}`);
+                const buyingPriceSpan = document.getElementById(`buying_price_span_${productId}`);
+                const totalBuyingAmountDisplay = document.getElementById(`total_buying_amount_display_${productId}`);
+                const hiddenTotalAmountInput = document.getElementById(`hidden_total_amount_${productId}`);
+                const hiddenTotalBuyingAmountInput = document.getElementById(`hidden_total_buying_amount_${productId}`);  // Update ID
+                const sellingPricePerUnit = parseFloat(input.dataset.sellingPrice) || 0;
+                const buyingPricePerUnit = parseFloat(input.dataset.buyingPrice) || 0;
+        
+                let quantity = parseFloat(input.value);
+        
+                if (isNaN(quantity) || quantity < 1) {
+                    quantity = 1;
+                    input.value = 1;
+                }
+        
+                const totalSellingAmount = quantity * sellingPricePerUnit;
+                const totalBuyingAmount = quantity * buyingPricePerUnit;
+        
+                quantityDisplay.textContent = quantity;
+                quantityDisplayBuying.textContent = quantity;  // Update the buying display
+                totalAmountDisplay.textContent = `₹ ${totalSellingAmount.toFixed(2)}`;
+                totalBuyingAmountDisplay.textContent = `₹ ${totalBuyingAmount.toFixed(2)}`;
+                buyingPriceSpan.textContent = `₹ ${buyingPricePerUnit.toFixed(2)}`;
+        
+                hiddenTotalAmountInput.value = totalSellingAmount.toFixed(2);
+                hiddenTotalBuyingAmountInput.value = totalBuyingAmount.toFixed(2); // Update the total buying amount
+        
+                updateTotalBillAmount();
+            }
+        
+            function updateTotalBillAmount() {
+                let totalBillAmount = 0;
+                quantityInputs.forEach(input => {
+                    const productId = input.id.split('_')[1];
+                    const hiddenTotalAmountInput = document.getElementById(`hidden_total_amount_${productId}`);
+                    const totalAmountText = hiddenTotalAmountInput.value;
+                    totalBillAmount += parseFloat(totalAmountText) || 0;
+                });
+                totalBillAmountDisplay.textContent = `₹ ${totalBillAmount.toFixed(2)}`;
+            }
+        
+            quantityInputs.forEach(input => {
+                const storedQuantity = localStorage.getItem(input.id);
+                input.value = storedQuantity ? storedQuantity : 1;
+        
+                updateDisplays(input);
+        
+                input.addEventListener('input', () => {
+                    updateDisplays(input);
+                    localStorage.setItem(input.id, input.value);
+                });
+            });
+        
+            updateTotalBillAmount();
+        });
+        
+
+        
+    </script>
+    
+    
+    
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+
+    <div class="billing_box">
+        <h1 class="adih">
+            {{ shop_owner_first_name }} {{ shop_owner_last_name }}, please start billing the products at  {{ shop_owner_shop_name }}
+        </h1>
+        <h6 class="billingbox_guide"><marquee class="bgmar" scrollamount="2">Enter all billing items individually using the search option.If a searched product is not found or after searching for a new product, refresh the page to see all products.After entering all items, click 'Bill'.</marquee></h6>
+        {% comment %} <button class="bill-button2">Low Stock Products</button> {% endcomment %}
+        <h2></h2>
+
+        
+        <a href="{% url 'low_stock_products' shop_owner_id %}" class="bill-button2">Low Stock Products</a>
+        
+        
+        <form method="get"  class="phone-search-container">
+            <input type="text" id="phoneNumberSearch" name="phone_number" class="cust_mailId" placeholder="Enter Customer registered Phone number" value="{{ phone_number_value }}">
+            {% comment %} <input type="text" id="phoneNumberSearch" name="phone_number" class="cust_mailId" placeholder="Enter Customer registered Phone number" value="{{ phone_number_value }}"> {% endcomment %}
+            <button type="submit" class="cust_ph_button"><i class="fa fa-search"></i></button>
+        </form>
+        
+        <p class="customer_phone_number">Customer's Phone Number :- {{ phone_number_from_db }}  --  Customer's Name :-  {{ customer_first_name }} {{ customer_last_name }}</p>
+        
+    
+
+        <div class="search-container">
+            
+            {% comment %} <input type="text" id="productNameSearch" class="product-search" placeholder="Find the product">
+            <button class="search-button"><i class="fa fa-search"></i></button> {% endcomment %}
+            <form method="get" class="search-container">
+                <input type="text" name="q" id="productNameSearch" class="product-search" placeholder="Find the product" value="{{ query }}">
+                <button type="submit" class="search-button"><i class="fa fa-search"></i></button>
+            </form>
+        </div>
+        
+
+        {% comment %} ******************* {% endcomment %}
+        <form method="post" action="{% url 'shop_owner_billing' shop_owner_id %}">
+            {% csrf_token %}
+            <table class="billtable" id="productsTable">
+                <thead>
+                    <tr>
+                        <th class="product-name">Product Name</th>
+                        <th class="quantity">Modify Quantity (In KG)</th>
+                        <th class="price">Selling Price</th>
+                        <th class="price">Buying Price</th>
+                        <th class="place">Place</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if products %}
+                        {% for product in products %}
+                            <tr class="table-row">
+                                <td>{{ product.product_name }}</td>
+                                <td>
+                                    <input type="number" 
+                                        id="quantity_{{ product.id }}" 
+                                        name="quantities" 
+                                        min="1" 
+                                        step="any" 
+                                        value="1"
+                                        data-selling-price="{{ product.product_selling_price }}"
+                                        data-buying-price="{{ product.product_buying_price }}">
+                                    <input type="hidden" name="product_ids" value="{{ product.id }}">
+                                    <input type="hidden" name="prices" value="{{ product.product_selling_price }}">
+                                    <input type="hidden" name="total_amounts" id="hidden_total_amount_{{ product.id }}" value="{{ product.product_selling_price }}">
+                                    <input type="hidden" name="total_buying_amounts" id="hidden_total_buying_amount_{{ product.id }}" value="0">
+                                </td>
+                                <td id="total_{{ product.id }}">
+                                    <span id="quantity_display_{{ product.id }}">1</span> X 
+                                    <span id="selling_price_display_{{ product.id }}">₹ {{ product.product_selling_price }}</span> = 
+                                    <span id="total_amount_display_{{ product.id }}">₹ {{ product.product_selling_price }}</span>
+                                </td>
+                                <td id="buying_price_display_{{ product.id }}">
+                                    <span id="quantity_display_buying_{{ product.id }}">1</span> X 
+                                    <span id="buying_price_span_{{ product.id }}">₹ {{ product.product_buying_price }}</span> = 
+                                    <span id="total_buying_amount_display_{{ product.id }}">₹ {{ product.product_buying_price }}</span>
+                                </td>
+                                <td>{{ product.product_storage_place }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" style="color: red; font-weight: bold; font-style: italic; text-align: center; font-size: 27px;">
+                                If not searched, start searching. If searched, No products were found based on your search. The item is not available in the store. Search again to add the next product. If you want to add the product, you can do so by adding items from the Add items.
+                            </td>
+                        </tr>
+                    {% endif %}
+                    {% if messages %}
+                        <div class="alert-container">
+                            {% for message in messages %}
+                                <div class="alert alert-success">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </tbody>
+            </table>
+            <div class="total-section">
+                <div style="color: Green;">Total Amount: <span id="totalBillAmount">₹ 0.00</span></div>
+            </div>
+            <button type="submit" class="bill-button">Bill</button>
+        </form>
+        
+        
+
+        {% comment %} ********************* {% endcomment %}
+
+
+
+        {% comment %} <div class="total-section">
+            <div style="color: Green;">Total Amount: <span id="totalBillAmount">₹ 0.00</span></div>
+            
+        </div> {% endcomment %}
+        {% comment %} <button class="bill-button">Bill</button> {% endcomment %}
+        
+    </div>
+</section>
+{% endblock %}
